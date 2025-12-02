@@ -48,12 +48,12 @@ async function fetchAndParseSite(site, query) {
   let html;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome Safari",
-      },
-    });
+	  //const res = await fetch(url, {
+      //  headers: {
+      //    "User-Agent":
+      //      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome Safari",
+      //  },
+      //});
 
 	const res = await fetch(url, {
 	  headers: {
