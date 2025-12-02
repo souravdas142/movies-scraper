@@ -5,7 +5,7 @@
   "enabled": true,
   "template": "https://mlsbd.co/?s={query}",
   "resultSelector": ".single-post",
-  "linkSelector": ".post-desc > a",
+  "linkSelector": "a",
   "titleSelector": ".post-title",
   "snippetSelector": ""
   },

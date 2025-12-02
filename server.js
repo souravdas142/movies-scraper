@@ -4,16 +4,17 @@ const fs = require("fs");
 const path = require("path");
 const cheerio = require("cheerio");
 
-// Node 18+ has global fetch. If you’re on older Node, uncomment next line:
+// Node 18+ has global fetch
+// If using older Node, uncomment below:
 // const fetch = require("node-fetch");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from public/
+// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Load sites config
+// Load sites.json
 const sitesPath = path.join(__dirname, "config", "sites.json");
 let sites = [];
 
@@ -27,10 +28,9 @@ function loadSites() {
     sites = [];
   }
 }
-
 loadSites();
 
-// Utility: absolute URL
+// URL helper
 function makeAbsoluteUrl(base, href) {
   try {
     return new URL(href, base).toString();
@@ -39,7 +39,7 @@ function makeAbsoluteUrl(base, href) {
   }
 }
 
-// Parse one site
+// Parse results for ONE site
 async function fetchAndParseSite(site, query) {
   const encoded = encodeURIComponent(query);
   const url = site.template.replace("{query}", encoded);
@@ -51,14 +51,32 @@ async function fetchAndParseSite(site, query) {
     const res = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
-          "(KHTML, like Gecko) Chrome Safari"
-      }
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome Safari",
+      },
     });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
+	const res = await fetch(url, {
+	  headers: {
+  	    "User-Agent":
+  	      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  	    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  	    "Accept-Language": "en-US,en;q=0.9",
+  	    "Cache-Control": "no-cache",
+  	    "Pragma": "no-cache",
+  	    "Sec-Ch-Ua": "\"Chromium\";v=\"120\", \"Not A(Brand\";v=\"99\"",
+  	    "Sec-Ch-Ua-Mobile": "?0",
+  	    "Sec-Ch-Ua-Platform": "\"Linux\"",
+  	    "Sec-Fetch-Dest": "document",
+  	    "Sec-Fetch-Mode": "navigate",
+  	    "Sec-Fetch-Site": "none",
+  	    "Sec-Fetch-User": "?1",
+  	    "Upgrade-Insecure-Requests": "1",
+  	    "Referer": "https://google.com/"
+  }
+});
+
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     html = await res.text();
   } catch (err) {
@@ -69,14 +87,14 @@ async function fetchAndParseSite(site, query) {
       ok: false,
       error: `Fetch error: ${err.message}`,
       items: [],
-      ms: Date.now() - startTime
+      ms: Date.now() - startTime,
     };
   }
 
   const $ = cheerio.load(html);
   const items = [];
 
-  const resultSelector = site.resultSelector || "a";
+  const resultSelector = site.resultSelector;
   const linkSelector = site.linkSelector || "a";
   const titleSelector = site.titleSelector || linkSelector;
   const snippetSelector = site.snippetSelector || "";
@@ -88,12 +106,10 @@ async function fetchAndParseSite(site, query) {
     const href = linkEl.attr("href");
     if (!href) return;
 
-    const urlAbs = makeAbsoluteUrl(url, href);
+    const absolute = makeAbsoluteUrl(url, href);
 
     let titleText = $el.find(titleSelector).first().text().trim();
-    if (!titleText) {
-      titleText = linkEl.text().trim();
-    }
+    if (!titleText) titleText = linkEl.text().trim();
 
     let snippet = "";
     if (snippetSelector) {
@@ -104,8 +120,8 @@ async function fetchAndParseSite(site, query) {
 
     items.push({
       title: titleText || "(no title)",
-      url: urlAbs,
-      snippet
+      url: absolute,
+      snippet,
     });
   });
 
@@ -116,29 +132,25 @@ async function fetchAndParseSite(site, query) {
     ok: true,
     error: null,
     items,
-    ms: Date.now() - startTime
+    ms: Date.now() - startTime,
   };
 }
 
-// API endpoint: /api/search?q=Something
+// Normal Search
 app.get("/api/search", async (req, res) => {
   const query = (req.query.q || "").trim();
-  if (!query) {
-    return res.status(400).json({ error: "Missing q parameter" });
-  }
-
-  if (!sites.length) {
-    return res.status(500).json({ error: "No sites configured" });
-  }
-
-  const promises = sites.map((site) => fetchAndParseSite(site, query));
+  if (!query) return res.status(400).json({ error: "Missing q" });
+  if (!sites.length) return res.status(500).json({ error: "No sites configured" });
 
   try {
-    const results = await Promise.all(promises);
+    const results = await Promise.all(
+      sites.map((s) => fetchAndParseSite(s, query))
+    );
+
     res.json({
       query,
       timestamp: new Date().toISOString(),
-      results
+      results,
     });
   } catch (err) {
     console.error("Search error:", err);
@@ -146,12 +158,66 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
-// Simple hot-reload endpoint for sites (optional)
+// Reload sites.json
 app.post("/api/reload-sites", (req, res) => {
   loadSites();
   res.json({ ok: true, count: sites.length });
 });
 
+
+// NEW: Search ALL websites (simple version)
+app.get("/api/searchAll", async (req, res) => {
+  const query = (req.query.q || "").trim();
+  if (!query) return res.json({ error: "Missing query" });
+
+  const encoded = encodeURIComponent(query);
+  const output = {};
+
+  await Promise.all(
+    sites.map(async (site) => {
+      const url = site.template.replace("{query}", encoded);
+      output[site.name] = [];
+
+      try {
+        const resp = await fetch(url, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/123 Safari/537.36",
+          },
+        });
+
+        if (!resp.ok) {
+          output[site.name] = { error: true, message: `HTTP ${resp.status}` };
+          return;
+        }
+
+        const html = await resp.text();
+        const $ = cheerio.load(html);
+
+        const items = [];
+        $(site.resultSelector).each((_, el) => {
+          const title = $(el).find(site.titleSelector).text().trim();
+          const link = $(el).find(site.linkSelector).attr("href");
+
+          if (!title || !link) return;
+
+          items.push({
+            title,
+            url: makeAbsoluteUrl(url, link),
+          });
+        });
+
+        output[site.name] = items;
+      } catch (err) {
+        output[site.name] = { error: true, message: err.message };
+      }
+    })
+  );
+
+  res.json(output);
+});
+
+// Start
 app.listen(PORT, () => {
   console.log(`Movie meta-search server running at http://localhost:${PORT}`);
 });
