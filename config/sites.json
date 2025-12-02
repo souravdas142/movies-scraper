@@ -1,0 +1,34 @@
+[
+  {
+  "id": "mlsbd",
+  "name": "MLSBD",
+  "enabled": true,
+  "template": "https://mlsbd.co/?s={query}",
+  "resultSelector": ".single-post",
+  "linkSelector": ".post-desc > a",
+  "titleSelector": ".post-title",
+  "snippetSelector": ""
+  },
+  {
+  "id": "moviedrivebd",
+  "name": "MovieDriveBD",
+  "enabled": true,
+  "template": "https://moviedrivebd.com/?s={query}",
+  "resultSelector": ".result-item",
+  "linkSelector": ".title a",
+  "titleSelector": ".title a",
+  "snippetSelector": ".contenido p"
+  },
+  {
+  "id": "prmovies",
+  "name": "PRMovies",
+  "enabled": true,
+  "template": "https://prmovies.sale/?s={query}",
+  "resultSelector": ".ml-item",
+  "linkSelector": "a.ml-mask",
+  "titleSelector": ".mli-info h2",
+  "snippetSelector": "#hidden_tip p"
+  }
+
+]
+
