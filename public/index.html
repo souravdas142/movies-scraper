@@ -1,239 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Movie Meta Search</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        margin: 0;
-        padding: 1rem;
-        background: #0f172a;
-        color: #e5e7eb;
-      }
-      h1 {
-        margin-top: 0;
-        font-size: 1.5rem;
-      }
-      .search-bar {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-      }
-      .search-bar input {
-        flex: 1;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
-        border: 1px solid #4b5563;
-        background: #020617;
-        color: #e5e7eb;
-      }
-      .search-bar button {
-        padding: 0.5rem 0.9rem;
-        border-radius: 0.5rem;
-        border: none;
-        cursor: pointer;
-        background: #22c55e;
-        color: #020617;
-        font-weight: 600;
-      }
-      .search-bar button:disabled {
-        opacity: 0.5;
-        cursor: wait;
-      }
-      .status {
-        font-size: 0.85rem;
-        color: #9ca3af;
-        margin-bottom: 0.75rem;
-      }
-      .site-block {
-        border-radius: 0.75rem;
-        padding: 0.75rem 0.9rem;
-        margin-bottom: 0.75rem;
-        background: #020617;
-        border: 1px solid #1f2937;
-      }
-      .site-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 0.4rem;
-      }
-      .site-name {
-        font-weight: 600;
-      }
-      .site-meta {
-        font-size: 0.8rem;
-        color: #9ca3af;
-      }
-      .site-error {
-        color: #f97373;
-        font-size: 0.85rem;
-      }
-      .result-item {
-        padding: 0.4rem 0;
-        border-top: 1px solid #111827;
-      }
-      .result-item:first-of-type {
-        border-top: none;
-      }
-      .result-title {
-        font-size: 0.95rem;
-        margin-bottom: 0.1rem;
-      }
-      .result-title a {
-        color: #38bdf8;
-        text-decoration: none;
-      }
-      .result-title a:hover {
-        text-decoration: underline;
-      }
-      .result-url {
-        font-size: 0.75rem;
-        color: #6b7280;
-        word-break: break-all;
-      }
-      .result-snippet {
-        font-size: 0.85rem;
-        color: #d1d5db;
-      }
-      .no-items {
-        font-size: 0.85rem;
-        color: #9ca3af;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Movie Meta Search</h1>
-    <div class="search-bar">
-      <input
-        id="queryInput"
-        type="text"
-        placeholder="Search movie (e.g., Inception)"
-        autocomplete="off"
-      />
-      <button id="searchBtn">Search</button>
-    </div>
-    <div class="status" id="status">Enter a query to begin.</div>
-    <div id="results"></div>
+<head>
+  <meta charset="utf-8" />
+  <title>Movie Meta Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <script>
-      const input = document.getElementById("queryInput");
-      const btn = document.getElementById("searchBtn");
-      const statusEl = document.getElementById("status");
-      const resultsEl = document.getElementById("results");
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+    .search-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .search-bar input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+    }
+    .search-bar button {
+      padding: 0.5rem 0.9rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      background: #22c55e;
+      color: #020617;
+      font-weight: 600;
+    }
+    .search-bar button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+    .status {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-bottom: 0.75rem;
+    }
 
-      async function doSearch() {
-        const q = input.value.trim();
-        if (!q) return;
+    /* Unified site-block styling (used by both search modes) */
+    .site-block {
+      border-radius: 0.75rem;
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 0.75rem;
+      background: #020617;
+      border: 1px solid #1f2937;
+    }
+    .site-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+      cursor: pointer;
+    }
+    .site-name {
+      font-weight: 600;
+    }
+    .site-meta {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    .site-error {
+      color: #f97373;
+      font-size: 0.85rem;
+    }
+    .result-item {
+      padding: 0.4rem 0;
+      border-top: 1px solid #111827;
+    }
+    .result-item:first-of-type {
+      border-top: none;
+    }
+    .result-title {
+      font-size: 0.95rem;
+      margin-bottom: 0.1rem;
+    }
+    .result-title a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .result-title a:hover {
+      text-decoration: underline;
+    }
+    .result-url {
+      font-size: 0.75rem;
+      color: #6b7280;
+      word-break: break-all;
+    }
+    .result-snippet {
+      font-size: 0.85rem;
+      color: #d1d5db;
+    }
+    .no-items {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
 
-        btn.disabled = true;
-        statusEl.textContent = `Searching for "${q}"...`;
-        resultsEl.innerHTML = "";
+    /* Collapsible body for searchAll() */
+    .site-body {
+      display: none;
+      padding-left: 5px;
+      margin-top: 6px;
+    }
+    .movie-item {
+      margin: 3px 0;
+    }
+	.manual-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .manual-link a {
+      color: #fbbf24; /* amber yellow */
+      text-decoration: none;
+    }
+    
+    .manual-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
 
-        try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-          }
-          const data = await res.json();
+<body>
+  <h1>Movie Meta Search</h1>
 
-          if (data.error) {
-            statusEl.textContent = `Error: ${data.error}`;
-            btn.disabled = false;
-            return;
-          }
+  <!-- Search bar -->
+  <div class="search-bar">
+    <input id="queryInput" type="text" placeholder="Search movie" autocomplete="off" />
+    <button id="searchBtn">Search</button>
+  </div>
 
-          statusEl.textContent = `Found results for "${data.query}" (${data.results.length} site(s))`;
-          renderResults(data.results);
-        } catch (err) {
-          console.error(err);
-          statusEl.textContent = `Request failed: ${err.message}`;
-        } finally {
+  <!-- Search All button -->
+  <button onclick="searchAll()" style="margin-bottom: 1rem; background:#38bdf8; color:#020617; padding:0.5rem 0.9rem; border-radius:0.5rem; border:none; font-weight:600;">
+    Search All Sites
+  </button>
+
+  <div class="status" id="status">Enter a query to begin.</div>
+  <div id="results"></div>
+
+  <!-- ORIGINAL /api/search -->
+  <script>
+    const input = document.getElementById("queryInput");
+    const btn = document.getElementById("searchBtn");
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+
+    async function doSearch() {
+      const q = input.value.trim();
+      if (!q) return;
+
+      btn.disabled = true;
+      statusEl.textContent = `Searching for "${q}"...`;
+      resultsEl.innerHTML = "";
+
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        if (data.error) {
+          statusEl.textContent = `Error: ${data.error}`;
           btn.disabled = false;
+          return;
         }
+
+        statusEl.textContent = `Found results (${data.results.length} site(s))`;
+        renderResults(data.results);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = `Request failed: ${err.message}`;
+      } finally {
+        btn.disabled = false;
       }
+    }
 
-      function renderResults(siteResults) {
-        resultsEl.innerHTML = "";
+    function renderResults(siteResults) {
+      resultsEl.innerHTML = "";
 
-        siteResults.forEach((site) => {
-          const block = document.createElement("div");
-          block.className = "site-block";
+      siteResults.forEach((site) => {
+        const block = document.createElement("div");
+        block.className = "site-block";
 
-          const header = document.createElement("div");
-          header.className = "site-header";
+        const header = document.createElement("div");
+        header.className = "site-header";
 
-          const name = document.createElement("div");
-          name.className = "site-name";
-          name.textContent = site.siteName || site.siteId;
+        const name = document.createElement("div");
+        name.className = "site-name";
+        name.textContent = site.siteName || site.siteId;
 
-          const meta = document.createElement("div");
-          meta.className = "site-meta";
-          meta.textContent = `${site.ms ?? "?"} ms`;
+        const meta = document.createElement("div");
+        meta.className = "site-meta";
+        meta.textContent = `${site.ms ?? "?"} ms`;
 
-          header.appendChild(name);
-          header.appendChild(meta);
-          block.appendChild(header);
+        header.appendChild(name);
+        header.appendChild(meta);
+        block.appendChild(header);
 
-          if (!site.ok) {
-            const errEl = document.createElement("div");
-            errEl.className = "site-error";
-            errEl.textContent = site.error || "Unknown error";
-            block.appendChild(errEl);
-            resultsEl.appendChild(block);
-            return;
-          }
+        if (!site.ok) {
+			const errEl = document.createElement("div");
+			errEl.className = "site-error";
+  			errEl.textContent = site.error || "Unknown error";
+  			block.appendChild(errEl);
 
-          if (!site.items || !site.items.length) {
-            const noEl = document.createElement("div");
-            noEl.className = "no-items";
-            noEl.textContent = "No results found on this site.";
-            block.appendChild(noEl);
-            resultsEl.appendChild(block);
-            return;
-          }
+  			// NEW: Manual fallback link
+  			if (site.manualUrl) {
+  			  const manual = document.createElement("div");
+  			  manual.className = "manual-link";
+  			  manual.innerHTML = `<a href="${site.manualUrl}" target="_blank">Open manually ↗</a>`;
+  			  block.appendChild(manual);
+  			}
 
-          site.items.forEach((item) => {
-            const div = document.createElement("div");
-            div.className = "result-item";
+  			resultsEl.appendChild(block);
+  			return;
+        }
 
-            const title = document.createElement("div");
-            title.className = "result-title";
-            const a = document.createElement("a");
-            a.href = item.url;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            a.textContent = item.title;
-            title.appendChild(a);
-            div.appendChild(title);
-
-            const url = document.createElement("div");
-            url.className = "result-url";
-            url.textContent = item.url;
-            div.appendChild(url);
-
-            if (item.snippet) {
-              const snip = document.createElement("div");
-              snip.className = "result-snippet";
-              snip.textContent = item.snippet;
-              div.appendChild(snip);
-            }
-
-            block.appendChild(div);
-          });
-
+        if (!site.items?.length) {
+          const noEl = document.createElement("div");
+          noEl.className = "no-items";
+          noEl.textContent = "No results found.";
+          block.appendChild(noEl);
           resultsEl.appendChild(block);
+          return;
+        }
+
+        site.items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "result-item";
+
+          const title = document.createElement("div");
+          title.className = "result-title";
+          const a = document.createElement("a");
+          a.href = item.url;
+          a.target = "_blank";
+          a.textContent = item.title;
+          title.appendChild(a);
+
+          div.appendChild(title);
+
+          const url = document.createElement("div");
+          url.className = "result-url";
+          url.textContent = item.url;
+          div.appendChild(url);
+
+          if (item.snippet) {
+            const snip = document.createElement("div");
+            snip.className = "result-snippet";
+            snip.textContent = item.snippet;
+            div.appendChild(snip);
+          }
+
+          block.appendChild(div);
         });
+
+        resultsEl.appendChild(block);
+      });
+    }
+
+    btn.addEventListener("click", doSearch);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doSearch();
+    });
+  </script>
+
+  <!-- NEW /api/searchAll -->
+  <script>
+    async function searchAll() {
+      const q = input.value.trim();
+      if (!q) return;
+
+      statusEl.textContent = `Searching ALL sites for "${q}"...`;
+      resultsEl.innerHTML = "<div class='status'>Loading...</div>";
+
+      const res = await fetch(`/api/searchAll?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+
+      resultsEl.innerHTML = "";
+
+      for (const site in data) {
+        const block = document.createElement("div");
+        block.className = "site-block";
+
+        const header = document.createElement("div");
+        header.className = "site-header";
+        header.innerHTML = `<span class="site-name">${site}</span><span class="site-meta">Click to expand</span>`;
+
+        const body = document.createElement("div");
+        body.className = "site-body";
+
+        const val = data[site];
+
+        if (val.error) {
+	      body.innerHTML = `
+	          <div style="color:red;">Error: ${val.message}</div>
+	          ${
+	            val.manualUrl
+	              ? `<div class="manual-link"><a href="${val.manualUrl}" target="_blank">Open manually ↗</a></div>`
+	              : ""
+	          }
+	      `;
+        } else if (!val?.length) {
+          body.innerHTML = `<div class="no-items">No results found.</div>`;
+        } else {
+          body.innerHTML = val
+            .map(
+              (item) =>
+                `<div class="movie-item"><a href="${item.url}" target="_blank">${item.title}</a></div>`
+            )
+            .join("");
+        }
+
+        header.onclick = () =>
+          (body.style.display = body.style.display === "block" ? "none" : "block");
+
+        block.appendChild(header);
+        block.appendChild(body);
+        resultsEl.appendChild(block);
       }
 
-      btn.addEventListener("click", doSearch);
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") doSearch();
-      });
-    </script>
-  </body>
+      statusEl.textContent = `Completed search across ${Object.keys(data).length} sites.`;
+    }
+  </script>
+
+</body>
 </html>
 
