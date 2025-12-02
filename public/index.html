@@ -116,6 +116,20 @@
     .movie-item {
       margin: 3px 0;
     }
+	.manual-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .manual-link a {
+      color: #fbbf24; /* amber yellow */
+      text-decoration: none;
+    }
+    
+    .manual-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 
@@ -195,12 +209,21 @@
         block.appendChild(header);
 
         if (!site.ok) {
-          const errEl = document.createElement("div");
-          errEl.className = "site-error";
-          errEl.textContent = site.error || "Unknown error";
-          block.appendChild(errEl);
-          resultsEl.appendChild(block);
-          return;
+			const errEl = document.createElement("div");
+			errEl.className = "site-error";
+  			errEl.textContent = site.error || "Unknown error";
+  			block.appendChild(errEl);
+
+  			// NEW: Manual fallback link
+  			if (site.manualUrl) {
+  			  const manual = document.createElement("div");
+  			  manual.className = "manual-link";
+  			  manual.innerHTML = `<a href="${site.manualUrl}" target="_blank">Open manually ↗</a>`;
+  			  block.appendChild(manual);
+  			}
+
+  			resultsEl.appendChild(block);
+  			return;
         }
 
         if (!site.items?.length) {
@@ -279,7 +302,14 @@
         const val = data[site];
 
         if (val.error) {
-          body.innerHTML = `<div class="site-error">${val.message}</div>`;
+	      body.innerHTML = `
+	          <div style="color:red;">Error: ${val.message}</div>
+	          ${
+	            val.manualUrl
+	              ? `<div class="manual-link"><a href="${val.manualUrl}" target="_blank">Open manually ↗</a></div>`
+	              : ""
+	          }
+	      `;
         } else if (!val?.length) {
           body.innerHTML = `<div class="no-items">No results found.</div>`;
         } else {

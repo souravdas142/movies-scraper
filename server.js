@@ -80,15 +80,16 @@ async function fetchAndParseSite(site, query) {
 
     html = await res.text();
   } catch (err) {
-    return {
-      siteId: site.id,
-      siteName: site.name,
-      url,
-      ok: false,
-      error: `Fetch error: ${err.message}`,
-      items: [],
-      ms: Date.now() - startTime,
-    };
+	return {
+	  siteId: site.id,
+	  siteName: site.name,
+	  url,
+	  ok: false,
+	  error: `Fetch error: ${err.message}`,
+	  manualUrl: url, // 👈 NEW: clickable fallback URL
+	  items: [],
+	  ms: Date.now() - startTime,
+	};
   }
 
   const $ = cheerio.load(html);
@@ -187,7 +188,7 @@ app.get("/api/searchAll", async (req, res) => {
         });
 
         if (!resp.ok) {
-          output[site.name] = { error: true, message: `HTTP ${resp.status}` };
+          output[site.name] = { error: true, message: `HTTP ${resp.status}`, manualUrl: url };
           return;
         }
 
@@ -209,7 +210,7 @@ app.get("/api/searchAll", async (req, res) => {
 
         output[site.name] = items;
       } catch (err) {
-        output[site.name] = { error: true, message: err.message };
+        output[site.name] = { error: true, message: err.message, manualUrl: url };
       }
     })
   );
